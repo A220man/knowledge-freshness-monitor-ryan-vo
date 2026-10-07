@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "knowledge-freshness-monitor-ryan-vo",
+  "owner": "A220man",
+  "email": "ryandtvo@gmail.com",
+  "domain": "rag",
+  "workflows": [
+    "Track document revisions, expiration policies, and drift detection",
+    "Trace citation graph impact to calculate stale RAG answers and affected query cache entries",
+    "Schedule and prioritize automated revalidation tasks and generate advisory freshness reports"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "summary": "Tracks document revisions and expiration, calculates impacted RAG answers from citation dependency graphs, and schedules prioritized revalidation tasks with an offline deterministic graph engine.",
+  "version": "1.0.0"
+}

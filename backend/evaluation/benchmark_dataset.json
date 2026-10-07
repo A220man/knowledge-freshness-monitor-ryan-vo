@@ -1,0 +1,222 @@
+[
+  {
+    "id": "case_01",
+    "description": "Verbatim document match with zero drift",
+    "orig_text": "API rate limits are set to 100 requests per minute per tenant with a burst capacity of 150.",
+    "rev_text": "API rate limits are set to 100 requests per minute per tenant with a burst capacity of 150.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 1.0,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_02",
+    "description": "Cosmetic punctuation and whitespace adjustment",
+    "orig_text": "Database backups run nightly at 02:00 UTC and retain snapshots for 30 consecutive calendar days.",
+    "rev_text": "Database backups run nightly at 02:00 UTC, and retain snapshots for 30 consecutive calendar days.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.9,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_03",
+    "description": "Minor wording substitution without semantic shift",
+    "orig_text": "System metrics are exported every fifteen seconds to Prometheus for alerting.",
+    "rev_text": "System metrics are published every 15 seconds into Prometheus for operational alerting.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.85,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_04",
+    "description": "Critical numerical threshold modification on primary citation",
+    "orig_text": "The maximum allowed payload size for webhook ingestion is 25 megabytes.",
+    "rev_text": "The maximum allowed payload size for webhook ingestion has been reduced to 5 megabytes.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 1.0,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_05",
+    "description": "Authentication protocol deprecation in core documentation",
+    "orig_text": "Clients may authenticate using basic auth headers or Bearer JWT tokens.",
+    "rev_text": "Basic authentication is permanently removed; all clients must authenticate strictly with mTLS or Bearer OAuth2 tokens.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.95,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_06",
+    "description": "Document retention policy expiration reached",
+    "orig_text": "Quarterly compliance guidelines for Q1 2024 tax filing deadlines.",
+    "rev_text": "Quarterly compliance guidelines for Q1 2024 tax filing deadlines.",
+    "is_expired": true,
+    "is_primary": true,
+    "confidence": 0.9,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_07",
+    "description": "Secondary citation expiration with stable primary citation",
+    "orig_text": "Auxiliary styling guidelines for dashboard breadcrumbs.",
+    "rev_text": "Auxiliary styling guidelines for dashboard breadcrumbs.",
+    "is_expired": true,
+    "is_primary": false,
+    "confidence": 0.4,
+    "expected_revalidate": true,
+    "expected_severity": "stale"
+  },
+  {
+    "id": "case_08",
+    "description": "Moderate documentation expansion with new caveats",
+    "orig_text": "SSO integrates with Google Workspace and Okta SAML connectors.",
+    "rev_text": "SSO integrates with Google Workspace, Okta SAML connectors, and Entra ID with mandatory SCIM provisioning.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.8,
+    "expected_revalidate": true,
+    "expected_severity": "stale"
+  },
+  {
+    "id": "case_09",
+    "description": "Reversal of security default setting",
+    "orig_text": "Public bucket access is enabled by default for new staging containers.",
+    "rev_text": "Public bucket access is strictly disabled by default; access must be granted explicitly via IAM role policies.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.95,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_10",
+    "description": "Secondary citation with minor lexical change",
+    "orig_text": "Logs are stored in standard JSON format in the logs directory.",
+    "rev_text": "Application logs are formatted as newline-delimited JSON inside the var logs folder.",
+    "is_expired": false,
+    "is_primary": false,
+    "confidence": 0.3,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_11",
+    "description": "Complete architectural rewrite of cited passage",
+    "orig_text": "Worker nodes poll the RabbitMQ broker queue every 500 milliseconds for tasks.",
+    "rev_text": "The queue architecture was migrated to Apache Kafka event streams with consumer group partitions.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 1.0,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_12",
+    "description": "Superseded legacy policy citation",
+    "orig_text": "Legacy billing tier Bronze supports up to 5 concurrent seat licenses.",
+    "rev_text": "Bronze tier is discontinued; existing customers migrated to Starter tier with 10 seats.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.9,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_13",
+    "description": "Unchanged SLA specification",
+    "orig_text": "Availability target is 99.9% uptime excluding scheduled maintenance windows.",
+    "rev_text": "Availability target is 99.9% uptime excluding scheduled maintenance windows.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.9,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_14",
+    "description": "SLA reduction requiring downstream model revalidation",
+    "orig_text": "Response latency guarantee is under 200 milliseconds p99 worldwide.",
+    "rev_text": "Response latency guarantee is revised to 450 milliseconds p95 during peak regional traffic.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.85,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_15",
+    "description": "Minor phrasing shift in secondary background citation",
+    "orig_text": "The service was originally deployed on Alpine Linux containers.",
+    "rev_text": "The microservice originally ran atop Alpine Linux container bases.",
+    "is_expired": false,
+    "is_primary": false,
+    "confidence": 0.25,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_16",
+    "description": "Critical deprecation of API parameter",
+    "orig_text": "Pass filter_by_user_id in query parameters to filter responses by user.",
+    "rev_text": "The filter_by_user_id query param is removed. Use header X-User-Context instead.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.95,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_17",
+    "description": "Minor typo correction in cited document",
+    "orig_text": "The authenication server verifies client signatures.",
+    "rev_text": "The authentication server verifies client signatures.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.8,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  },
+  {
+    "id": "case_18",
+    "description": "Moderate restructuring of setup instructions",
+    "orig_text": "Step 1: run migrate. Step 2: run seed. Step 3: launch server.",
+    "rev_text": "Step 1: verify database readiness. Step 2: execute schema migrations. Step 3: bootstrap seed data. Step 4: start worker daemon.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.75,
+    "expected_revalidate": true,
+    "expected_severity": "stale"
+  },
+  {
+    "id": "case_19",
+    "description": "Expired regulatory compliance disclosure",
+    "orig_text": "Annual SOC2 Type II assessment report for calendar year 2023.",
+    "rev_text": "Annual SOC2 Type II assessment report for calendar year 2023.",
+    "is_expired": true,
+    "is_primary": true,
+    "confidence": 1.0,
+    "expected_revalidate": true,
+    "expected_severity": "critical_stale"
+  },
+  {
+    "id": "case_20",
+    "description": "Identical document with unchanged checksum",
+    "orig_text": "Contact support via email at support@example.com during business hours.",
+    "rev_text": "Contact support via email at support@example.com during business hours.",
+    "is_expired": false,
+    "is_primary": true,
+    "confidence": 0.7,
+    "expected_revalidate": false,
+    "expected_severity": "fresh"
+  }
+]

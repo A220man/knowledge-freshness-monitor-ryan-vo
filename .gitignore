@@ -1,0 +1,28 @@
+# Environments and dependencies
+.venv/
+venv/
+node_modules/
+dist/
+build/
+.vite/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases and runtime state
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment and secrets
+.env
+.env.local
+
+# Tooling and agent metadata
+.antigravitycli/
+.omp/
