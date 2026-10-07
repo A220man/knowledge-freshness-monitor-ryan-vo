@@ -1,0 +1,76 @@
+{
+  "realm": "knowledge-freshness",
+  "enabled": true,
+  "displayName": "Knowledge Freshness Monitor Realm",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "viewer",
+        "description": "Read-only access to documents, citation graph, and tasks"
+      },
+      {
+        "name": "analyst",
+        "description": "Ability to ingest documents, trigger propagation, and schedule tasks"
+      },
+      {
+        "name": "admin",
+        "description": "Full administrative access including deletion and audit logs"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "knowledge-freshness-app",
+      "name": "Knowledge Freshness Monitor Frontend & Backend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:8000/api/auth/callback",
+        "http://localhost:8000/api/auth/callback",
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:8000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://127.0.0.1:5173/"
+      }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "saml-enterprise-idp",
+      "displayName": "Enterprise SAML 2.0 IdP",
+      "providerId": "saml",
+      "enabled": false,
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "entityId": "http://127.0.0.1:8080/realms/knowledge-freshness",
+        "singleSignOnServiceUrl": "https://idp.example.com/saml/sso",
+        "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+        "principalType": "SUBJECT",
+        "signatureAlgorithm": "RSA_SHA256",
+        "wantAssertionsSigned": "true",
+        "wantAuthnRequestsSigned": "true"
+      }
+    }
+  ]
+}
