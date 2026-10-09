@@ -1,6 +1,6 @@
 # Knowledge Freshness Monitor - Ryan Vo | AI & Machine Learning
 
-Current version: `1.0.0`.
+Current version: `1.1.0`.
 
 Knowledge Freshness Monitor addresses the critical challenge of silent staleness in Retrieval-Augmented Generation (RAG) pipelines, where underlying source documents update, expire, or get superseded while cached answers continue citing obsolete context. The system implements a deterministic citation graph propagation engine combined with chunk-level lexical and semantic drift analysis to trace revision impacts across downstream query answers and schedule prioritized revalidation tasks. It is built for AI platform engineers, RAG operators, and enterprise knowledge managers requiring high assurance in generative knowledge retrieval.
 
@@ -244,3 +244,7 @@ docker compose ps
 
 Developed by **Ryan Vo** ([ryandtvo@gmail.com](mailto:ryandtvo@gmail.com)).  
 Licensed under the [MIT License](LICENSE).
+
+### Spreadsheet export safety
+
+Revalidation CSV exports prefix potentially executable spreadsheet formulas with an apostrophe. This applies to exported text only; stored queries, task reasons, and resolver names remain unchanged. Numeric priority scores retain their original format.
