@@ -109,13 +109,23 @@ def update_task_status(
     return task
 
 
+def _spreadsheet_cell(value):
+    """Keep untrusted text literal in spreadsheet exports, without mutating storage."""
+    if isinstance(value, str) and (
+        value.startswith(("\t", "\r", "\n"))
+        or value.lstrip().startswith(("=", "+", "-", "@"))
+    ):
+        return "'" + value
+    return value
+
+
 def export_tasks_csv(db: Session) -> str:
     tasks = db.query(RevalidationTask).order_by(RevalidationTask.priority_score.desc()).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["task_id", "answer_id", "query_text", "status", "priority_level", "priority_score", "scheduled_at", "completed_at", "resolved_by", "reason"])
     for t in tasks:
-        writer.writerow([
+        writer.writerow(_spreadsheet_cell(cell) for cell in [
             t.id, t.answer_id, t.answer.query_text if t.answer else "", t.status, t.priority_level,
             f"{t.priority_score:.4f}", t.scheduled_at.isoformat() if t.scheduled_at else "",
             t.completed_at.isoformat() if t.completed_at else "", t.resolved_by or "", t.reason

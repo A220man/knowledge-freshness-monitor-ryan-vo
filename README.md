@@ -244,3 +244,7 @@ docker compose ps
 
 Developed by **Ryan Vo** ([ryandtvo@gmail.com](mailto:ryandtvo@gmail.com)).  
 Licensed under the [MIT License](LICENSE).
+
+### Spreadsheet export safety
+
+Revalidation CSV exports prefix potentially executable spreadsheet formulas with an apostrophe. This applies to exported text only; stored queries, task reasons, and resolver names remain unchanged. Numeric priority scores retain their original format.
