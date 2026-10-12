@@ -37,3 +37,23 @@ def test_export_preserves_ordinary_quoted_and_multiline_text(client, db_session,
     response = client.get('/api/revalidation/export', headers=auth_headers_factory('viewer'))
     row = list(csv.DictReader(io.StringIO(response.text)))[0]
     assert row['query_text'] == value and row['reason'] == value
+
+
+def test_export_filtered_preserves_neutralization(client, db_session, auth_headers_factory):
+    formula_val = '=2*3'
+    answer = RagAnswer(query_text=formula_val, answer_text='Answer', query_hash='formula-flt')
+    db_session.add(answer)
+    db_session.flush()
+    db_session.add(RevalidationTask(
+        answer_id=answer.id, reason=formula_val, status='pending',
+        priority_score=0.9, priority_level='high'
+    ))
+    db_session.commit()
+
+    response = client.get('/api/revalidation/export?status_filter=pending&priority_filter=high', headers=auth_headers_factory('viewer'))
+    assert response.status_code == 200
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert len(rows) == 1
+    assert rows[0]['query_text'] == "'" + formula_val
+    assert rows[0]['reason'] == "'" + formula_val
+

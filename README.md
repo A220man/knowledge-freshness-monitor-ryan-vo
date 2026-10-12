@@ -1,5 +1,8 @@
 # Knowledge Freshness Monitor - Ryan Vo | AI & Machine Learning
 
+> Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
+
+
 Current version: `1.1.0`.
 
 Knowledge Freshness Monitor addresses the critical challenge of silent staleness in Retrieval-Augmented Generation (RAG) pipelines, where underlying source documents update, expire, or get superseded while cached answers continue citing obsolete context. The system implements a deterministic citation graph propagation engine combined with chunk-level lexical and semantic drift analysis to trace revision impacts across downstream query answers and schedule prioritized revalidation tasks. It is built for AI platform engineers, RAG operators, and enterprise knowledge managers requiring high assurance in generative knowledge retrieval.
@@ -44,7 +47,7 @@ flowchart LR
 ### 3. Prioritized Revalidation Task Queue
 - **Automated Priority Scoring**: Ranks tasks based on answer impact score, primary citation compromise, and citation breadth.
 - **Lifecycle State Tracking**: Supports `pending` $\to$ `in_progress` $\to$ `completed` / `dismissed` workflows, automatically resetting answer freshness upon completion.
-- **Batch Auto-Queueing & CSV Export**: Bulk-scans unvalidated answers above configured impact thresholds and exports audit records.
+- **Batch Auto-Queueing & Filtered CSV Export**: Bulk-scans unvalidated answers above configured impact thresholds and exports audit records with optional status and priority filters.
 
 ### 4. Opt-in Advisory Reports & Multi-Provider Architecture
 - **Grounded Advisory Synthesis**: Generates human-in-the-loop revision summaries grounded strictly in database diffs and citation excerpts.
@@ -130,7 +133,7 @@ The evaluation suite evaluates 20 curated RAG revision drift scenarios in `backe
 | `POST` | `/api/revalidation/tasks` | Analyst | Manually schedule a revalidation task |
 | `POST` | `/api/revalidation/batch` | Analyst | Batch schedule revalidation tasks for stale answers |
 | `PATCH`| `/api/revalidation/tasks/{id}` | Analyst | Update task status (`pending`/`in_progress`/`completed`) |
-| `GET` | `/api/revalidation/export` | Viewer | Export revalidation task queue as CSV |
+| `GET` | `/api/revalidation/export` | Viewer | Export revalidation task queue as CSV (supports `status_filter` and `priority_filter`) |
 | `GET` | `/api/evaluation/run` | Viewer | Execute offline benchmark suite and return metrics |
 | `GET` | `/api/audit` | Admin | Query immutable administrative audit trail logs |
 
@@ -247,4 +250,5 @@ Licensed under the [MIT License](LICENSE).
 
 ### Spreadsheet export safety
 
-Revalidation CSV exports prefix potentially executable spreadsheet formulas with an apostrophe. This applies to exported text only; stored queries, task reasons, and resolver names remain unchanged. Numeric priority scores retain their original format.
+Revalidation CSV exports prefix potentially executable spreadsheet formulas with an apostrophe and support optional filtering by `status_filter` (`pending`, `in_progress`, `completed`, `dismissed`) and `priority_filter` (`high`, `medium`, `low`). This applies to exported text only; stored queries, task reasons, and resolver names remain unchanged. Numeric priority scores retain their original format.
+

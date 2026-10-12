@@ -141,6 +141,13 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ status, notes })
       }),
+    getExportCsvUrl: (statusFilter?: string, priorityFilter?: string) => {
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status_filter', statusFilter);
+      if (priorityFilter) params.append('priority_filter', priorityFilter);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return `/api/revalidation/export${query}`;
+    },
     exportCsvUrl: '/api/revalidation/export'
   },
 

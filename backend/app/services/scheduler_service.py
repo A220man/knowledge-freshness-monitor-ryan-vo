@@ -119,8 +119,17 @@ def _spreadsheet_cell(value):
     return value
 
 
-def export_tasks_csv(db: Session) -> str:
-    tasks = db.query(RevalidationTask).order_by(RevalidationTask.priority_score.desc()).all()
+def export_tasks_csv(
+    db: Session,
+    status_filter: Optional[str] = None,
+    priority_filter: Optional[str] = None
+) -> str:
+    query = db.query(RevalidationTask)
+    if status_filter:
+        query = query.filter(RevalidationTask.status == status_filter)
+    if priority_filter:
+        query = query.filter(RevalidationTask.priority_level == priority_filter)
+    tasks = query.order_by(RevalidationTask.priority_score.desc()).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["task_id", "answer_id", "query_text", "status", "priority_level", "priority_score", "scheduled_at", "completed_at", "resolved_by", "reason"])
