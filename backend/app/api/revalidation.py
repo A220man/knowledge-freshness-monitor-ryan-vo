@@ -88,10 +88,12 @@ def modify_task_status(
 
 @router.get("/export")
 def export_tasks(
+    status_filter: Optional[str] = Query(default=None),
+    priority_filter: Optional[str] = Query(default=None),
     session: UserSession = Depends(require_viewer),
     db: Session = Depends(get_db)
 ) -> Response:
-    csv_data = export_tasks_csv(db)
+    csv_data = export_tasks_csv(db, status_filter=status_filter, priority_filter=priority_filter)
     return Response(
         content=csv_data, media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=revalidation_tasks.csv"}

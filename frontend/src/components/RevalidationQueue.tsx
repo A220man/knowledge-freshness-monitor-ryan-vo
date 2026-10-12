@@ -46,7 +46,7 @@ export const RevalidationQueue: React.FC = () => {
           <h2>Revalidation Task Queue</h2>
           <p className="section-desc">Prioritized re-evaluation queue targeting stale and drifted RAG answers.</p>
         </div>
-        <button onClick={() => window.open(api.revalidation.exportCsvUrl, '_blank')} className="btn-secondary">
+        <button onClick={() => window.open(api.revalidation.getExportCsvUrl(statusFilter, priorityFilter), '_blank')} className="btn-secondary">
           📥 Export CSV
         </button>
       </div>

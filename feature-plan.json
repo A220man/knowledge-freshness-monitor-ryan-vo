@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "current_feature": "filtered-revalidation-export",
+  "features": [
+    {
+      "id": "document-drift-tracking",
+      "title": "Document Revision and Expiration Drift Tracking",
+      "status": "done",
+      "acceptance": [
+        "Ingest documents and segment into content-hashed chunks",
+        "Compute composite Jaccard and cosine drift scores across revisions",
+        "Track retention deadlines and mark expired revisions"
+      ],
+      "implementation": [
+        "backend/app/services/document_service.py",
+        "backend/app/services/drift_engine.py",
+        "backend/app/api/documents.py",
+        "frontend/src/components/DocumentManager.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_drift_engine.py",
+        "backend/tests/test_documents_api.py",
+        "frontend/src/test/DocumentManager.test.tsx"
+      ]
+    },
+    {
+      "id": "citation-graph-propagation",
+      "title": "Citation Dependency Graph and Impact Propagation",
+      "status": "done",
+      "acceptance": [
+        "Map RAG answer citations to versioned document revisions",
+        "Propagate revision drift and expiration across citation graph",
+        "Classify answer severity into fresh, stale, and critical_stale"
+      ],
+      "implementation": [
+        "backend/app/services/graph_engine.py",
+        "backend/app/api/citations.py",
+        "frontend/src/components/CitationGraphView.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_graph_engine.py",
+        "backend/tests/test_citations_api.py",
+        "frontend/src/test/CitationGraphView.test.tsx"
+      ]
+    },
+    {
+      "id": "revalidation-queue-workflow",
+      "title": "Revalidation Task Queue and Priority Scheduling",
+      "status": "done",
+      "acceptance": [
+        "Score task priorities based on impact, primary citation breach, and breadth",
+        "Support automated batch scheduling for stale answers",
+        "Manage task lifecycle states and neutralize spreadsheet formulas in CSV export"
+      ],
+      "implementation": [
+        "backend/app/services/scheduler_service.py",
+        "backend/app/api/revalidation.py",
+        "frontend/src/components/RevalidationQueue.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_revalidation_api.py",
+        "backend/tests/test_export_safety.py"
+      ]
+    },
+    {
+      "id": "opt-in-llm-advisory",
+      "title": "Opt-in Grounded Advisory Reports",
+      "status": "done",
+      "acceptance": [
+        "Synthesize grounded revision summaries across multi-provider adapters",
+        "Provide offline fallback when LLM_API_KEY is not configured",
+        "Redact credentials and sensitive headers from error messages"
+      ],
+      "implementation": [
+        "backend/app/services/llm_advisor.py",
+        "backend/app/api/citations.py"
+      ],
+      "tests": [
+        "backend/tests/test_llm_advisor.py"
+      ]
+    },
+    {
+      "id": "oidc-rbac-security",
+      "title": "OIDC Authentication and Role-Based Access Control",
+      "status": "done",
+      "acceptance": [
+        "Support Keycloak OIDC authorization code flow and local demo session mode",
+        "Enforce viewer, analyst, and admin roles across all API endpoints",
+        "Enforce CSRF token validation on state-modifying requests"
+      ],
+      "implementation": [
+        "backend/app/core/security.py",
+        "backend/app/api/auth.py",
+        "frontend/src/context/AuthContext.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_auth.py"
+      ]
+    },
+    {
+      "id": "offline-benchmark-suite",
+      "title": "Offline AI/ML Freshness Evaluation Benchmark",
+      "status": "done",
+      "acceptance": [
+        "Evaluate drift and impact detection across 20 curated RAG revision cases",
+        "Measure precision, recall, F1 score, severity accuracy, and evaluation latency",
+        "Expose reproducible benchmark execution in backend and frontend"
+      ],
+      "implementation": [
+        "backend/evaluation/evaluator.py",
+        "backend/app/api/evaluation.py",
+        "frontend/src/components/EvaluationView.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_drift_engine.py"
+      ]
+    },
+    {
+      "id": "filtered-revalidation-export",
+      "title": "Filtered Revalidation Task CSV Export",
+      "status": "done",
+      "acceptance": [
+        "Filter exported revalidation CSV tasks by status and priority level",
+        "Synchronize frontend queue filter parameters with CSV export URL generation",
+        "Preserve formula neutralization and spreadsheet safety on filtered exports"
+      ],
+      "implementation": [
+        "backend/app/services/scheduler_service.py",
+        "backend/app/api/revalidation.py",
+        "frontend/src/api/client.ts",
+        "frontend/src/components/RevalidationQueue.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_revalidation_api.py",
+        "backend/tests/test_export_safety.py",
+        "frontend/src/test/RevalidationQueue.test.tsx"
+      ]
+    },
+    {
+      "id": "citation-subgraph-filtering",
+      "title": "Citation Subgraph Query Filtering",
+      "status": "planned",
+      "acceptance": [
+        "Filter citation graph topology by document domain, impact threshold, and answer recency",
+        "Isolate impacted clusters in visual DAG representation"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "automated-drift-webhook-notifications",
+      "title": "Automated Drift Webhook Notifications",
+      "status": "planned",
+      "acceptance": [
+        "Dispatch webhook alerts when answers transition to critical_stale status",
+        "Support retry backoff and HMAC signature verification"
+      ],
+      "implementation": [],
+      "tests": []
+    }
+  ]
+}
