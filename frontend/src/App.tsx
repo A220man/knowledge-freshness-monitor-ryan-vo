@@ -24,7 +24,6 @@ export const AppContent: React.FC = () => {
         <div className="footer-container">
           <span>Knowledge Freshness Monitor &copy; 2026 Ryan Vo</span>
           <span>Contact: <a href="mailto:ryandtvo@gmail.com">ryandtvo@gmail.com</a></span>
-          <span>Provider-Agnostic AI &amp; Machine Learning Operations</span>
         </div>
       </footer>
     </div>

@@ -1,4 +1,3 @@
-"""Revalidation job scheduling, priority ranking, and queue management."""
 import csv
 import io
 import json

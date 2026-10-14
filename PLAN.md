@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-filtered-revalidation-export
+citation-subgraph-filtering
 
 ## Roadmap
 
@@ -101,11 +101,15 @@ Tests: `backend/tests/test_revalidation_api.py`, `backend/tests/test_export_safe
 
 ### citation-subgraph-filtering — Citation Subgraph Query Filtering
 
-Status: planned
+Status: done
 
 Acceptance:
 - Filter citation graph topology by document domain, impact threshold, and answer recency
 - Isolate impacted clusters in visual DAG representation
+
+Implementation: `backend/app/services/graph_engine.py`, `backend/app/api/citations.py`, `frontend/src/api/client.ts`, `frontend/src/components/CitationGraphView.tsx`
+
+Tests: `backend/tests/test_graph_engine.py`, `backend/tests/test_citations_api.py`, `frontend/src/test/CitationGraphView.test.tsx`
 
 ### automated-drift-webhook-notifications — Automated Drift Webhook Notifications
 

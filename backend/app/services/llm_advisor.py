@@ -1,4 +1,3 @@
-"""Opt-in LLM advisory service supporting OpenAI, Anthropic, Gemini, and Ollama."""
 import re
 from typing import Dict, Any, List, Optional
 import httpx
@@ -49,9 +48,9 @@ async def generate_advisory_report(
     ]
 
     if not api_key:
-        rec = "CRITICAL: Primary citations drifted or expired. Immediate regeneration required." if answer.impact_score >= 0.70 else (
+        rec = "CRITICAL: Primary citations drifted or expired." if answer.impact_score >= 0.70 else (
             "MODERATE: Non-critical drift detected in citations. Schedule queued revalidation." if answer.impact_score >= 0.25 else
-            "PASS: All citation revisions remain fresh."
+            "PASS: Citations remain fresh."
         )
         return {
             "answer_id": answer.id,
@@ -61,7 +60,7 @@ async def generate_advisory_report(
             "grounding_verified": True,
             "summary": f"Evaluated impact {answer.impact_score:.2f} ({answer.freshness_status}) over {len(answer.citations)} citations.",
             "recommendation": rec,
-            "raw_reasoning": "Offline deterministic baseline executed (LLM_API_KEY not configured).",
+            "raw_reasoning": "Offline baseline. LLM_API_KEY is not configured.",
             "citations_referenced": citations_refs
         }
 

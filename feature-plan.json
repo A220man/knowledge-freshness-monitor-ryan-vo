@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "filtered-revalidation-export",
+  "current_feature": "citation-subgraph-filtering",
   "features": [
     {
       "id": "document-drift-tracking",
@@ -139,13 +139,22 @@
     {
       "id": "citation-subgraph-filtering",
       "title": "Citation Subgraph Query Filtering",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Filter citation graph topology by document domain, impact threshold, and answer recency",
         "Isolate impacted clusters in visual DAG representation"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/services/graph_engine.py",
+        "backend/app/api/citations.py",
+        "frontend/src/api/client.ts",
+        "frontend/src/components/CitationGraphView.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_graph_engine.py",
+        "backend/tests/test_citations_api.py",
+        "frontend/src/test/CitationGraphView.test.tsx"
+      ]
     },
     {
       "id": "automated-drift-webhook-notifications",

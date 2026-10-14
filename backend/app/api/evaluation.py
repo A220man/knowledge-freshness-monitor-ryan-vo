@@ -1,4 +1,3 @@
-"""Evaluation API endpoints providing access to reproducible benchmark metrics."""
 from typing import Dict, Any
 from fastapi import APIRouter, Depends
 from backend.app.core.security import require_viewer

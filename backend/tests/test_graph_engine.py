@@ -151,3 +151,61 @@ def test_graph_data_extraction_topology(db_session):
     graph = extract_citation_graph_data(db_session)
     assert len(graph["nodes"]) == 3
     assert len(graph["links"]) == 2  # doc->rev and ans->rev
+    assert graph["summary"]["cluster_count"] == 1
+
+
+def test_subgraph_filters_domain_impact_recency_and_clusters(db_session):
+    """Domain, impact, and recency filters keep only the matching connected clusters."""
+    now = datetime.now(timezone.utc)
+    policy = Document(id="doc_policy", title="Retention Policy", source_uri="uri://policy", category="Policy")
+    ops = Document(id="doc_ops", title="Ops Runbook", source_uri="uri://ops", category="operations")
+    policy_rev = DocumentRevision(
+        id="rev_policy", document_id="doc_policy", version=2, content_hash="ph",
+        text_content="Retain records for 90 days.", status="expired", drift_score=0.8
+    )
+    ops_rev = DocumentRevision(
+        id="rev_ops", document_id="doc_ops", version=1, content_hash="oh",
+        text_content="Restart the worker.", status="fresh", drift_score=0.0
+    )
+    recent_policy = RagAnswer(
+        id="ans_policy", query_text="How long is retention?", answer_text="90 days",
+        query_hash="qp", impact_score=0.91, freshness_status="critical_stale", created_at=now - timedelta(days=2)
+    )
+    recent_ops = RagAnswer(
+        id="ans_ops", query_text="How do I restart workers?", answer_text="Restart them.",
+        query_hash="qo", impact_score=0.91, freshness_status="critical_stale", created_at=now - timedelta(days=1)
+    )
+    old_policy = RagAnswer(
+        id="ans_old", query_text="Old retention question", answer_text="stale copy",
+        query_hash="qold", impact_score=0.8, freshness_status="stale", created_at=now - timedelta(days=40)
+    )
+    low_policy = RagAnswer(
+        id="ans_low", query_text="Minor policy note", answer_text="still current",
+        query_hash="qlow", impact_score=0.1, freshness_status="fresh", created_at=now - timedelta(days=1)
+    )
+    edges = [
+        CitationEdge(id="e1", answer_id="ans_policy", revision_id="rev_policy", is_primary=True, confidence_weight=0.9),
+        CitationEdge(id="e2", answer_id="ans_ops", revision_id="rev_ops", is_primary=True, confidence_weight=0.9),
+        CitationEdge(id="e3", answer_id="ans_old", revision_id="rev_policy", is_primary=False, confidence_weight=0.4),
+        CitationEdge(id="e4", answer_id="ans_low", revision_id="rev_policy", is_primary=False, confidence_weight=0.3),
+    ]
+    db_session.add_all([policy, ops, policy_rev, ops_rev, recent_policy, recent_ops, old_policy, low_policy, *edges])
+    db_session.commit()
+
+    scoped = extract_citation_graph_data(
+        db_session, domain=" policy ", min_impact=0.7, recency_days=30, now=now
+    )
+    node_ids = {node["id"] for node in scoped["nodes"]}
+    assert node_ids == {"doc_doc_policy", "rev_rev_policy", "ans_ans_policy"}
+    assert scoped["summary"]["cluster_count"] == 1
+    assert scoped["summary"]["filters"]["domain"] == "policy"
+    assert scoped["clusters"][0]["domains"] == ["Policy"]
+    assert scoped["clusters"][0]["max_impact"] == 0.91
+    assert {link["type"] for link in scoped["links"]} == {"has_revision", "cites"}
+
+    split = extract_citation_graph_data(db_session, min_impact=0.7, recency_days=7, now=now)
+    assert split["summary"]["cluster_count"] == 2
+    assert split["summary"]["total_answers"] == 2
+    assert {node["cluster_id"] for node in split["nodes"] if node["type"] == "answer"} == {
+        cluster["id"] for cluster in split["clusters"]
+    }

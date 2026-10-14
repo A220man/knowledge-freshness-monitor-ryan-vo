@@ -1,4 +1,3 @@
-"""Revalidation job queue, prioritization, and export API."""
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session

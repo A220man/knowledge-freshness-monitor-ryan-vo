@@ -1,4 +1,3 @@
-"""RAG citation dependency mapping and impact analysis API."""
 import hashlib
 import time
 from typing import List, Optional, Dict, Any
@@ -107,10 +106,15 @@ def trigger_impact_analysis(
 
 @router.get("/graph", response_model=Dict[str, Any])
 def get_citation_graph(
+    domain: Optional[str] = Query(default=None, max_length=64),
+    min_impact: Optional[float] = Query(default=None, ge=0.0, le=1.0),
+    recency_days: Optional[int] = Query(default=None, ge=1, le=3650),
     session: UserSession = Depends(require_viewer),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
-    return extract_citation_graph_data(db)
+    return extract_citation_graph_data(
+        db, domain=domain, min_impact=min_impact, recency_days=recency_days
+    )
 
 
 @router.post("/answers/{answer_id}/advisory", response_model=AdvisoryReportResponse)

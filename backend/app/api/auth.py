@@ -1,4 +1,3 @@
-"""Authentication and OIDC identity brokering routes."""
 from typing import Dict, Any, Optional
 import urllib.parse
 from fastapi import APIRouter, Depends, HTTPException, Response, Request, status

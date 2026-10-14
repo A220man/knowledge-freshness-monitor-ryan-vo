@@ -1,4 +1,3 @@
-"""Transactional audit logging service."""
 import json
 from datetime import datetime, timezone
 from typing import Dict, Any, List
