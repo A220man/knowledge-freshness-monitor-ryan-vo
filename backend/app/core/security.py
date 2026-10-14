@@ -1,4 +1,3 @@
-"""Authentication, authorization, session management, and CSRF protection."""
 import secrets
 import hashlib
 import base64

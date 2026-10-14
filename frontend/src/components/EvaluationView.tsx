@@ -29,9 +29,7 @@ export const EvaluationView: React.FC = () => {
       <div className="section-toolbar">
         <div>
           <h2>AI/ML Evaluation & Drift Benchmark</h2>
-          <p className="section-desc">
-            Offline reproducible evaluation measuring precision, recall, and latency of the deterministic freshness pipeline.
-          </p>
+          <p className="section-desc">Offline precision, recall, and latency.</p>
         </div>
         <button onClick={runEvaluation} disabled={loading} className="btn-primary">
           {loading ? 'Evaluating Pipeline...' : 'Re-run Benchmark Suite'}
@@ -100,10 +98,6 @@ export const EvaluationView: React.FC = () => {
               <h3>Observed Boundary & Failure Cases ({metrics.failure_cases.length})</h3>
               <span className="badge">Heuristic Limitations</span>
             </div>
-            <p className="card-desc">
-              Deterministic offline n-gram Jaccard and Term-Frequency metrics provide instant sub-millisecond evaluation without LLM costs, but exhibit boundary limitations on pure lexical rephrasings:
-            </p>
-
             <div className="failure-list">
               {metrics.failure_cases.map((fc) => (
                 <div key={fc.id} className="failure-item">

@@ -62,3 +62,50 @@ def test_get_citation_graph_endpoint(client, auth_headers_factory):
     assert "nodes" in data
     assert "links" in data
     assert "summary" in data
+    assert "clusters" in data
+
+
+def test_citation_graph_filter_query_and_validation(client, auth_headers_factory, db_session):
+    """HTTP graph reads honor domain, impact, and recency filters and reject bad bounds."""
+    headers = auth_headers_factory(role="viewer")
+    doc = Document(title="Policy Handbook", source_uri="https://wiki.example/policy", category="policy")
+    other = Document(title="Ops Notes", source_uri="https://wiki.example/ops", category="operations")
+    db_session.add_all([doc, other])
+    db_session.flush()
+    rev = DocumentRevision(
+        document_id=doc.id, version=1, content_hash="p", text_content="90 days",
+        status="stale", drift_score=0.9
+    )
+    other_rev = DocumentRevision(document_id=other.id, version=1, content_hash="o", text_content="restart", status="fresh")
+    db_session.add_all([rev, other_rev])
+    db_session.commit()
+
+    analyst = auth_headers_factory(role="analyst")
+    created = client.post("/api/citations/answers", headers=analyst, json={
+        "query_text": "What is the retention window?",
+        "answer_text": "Records stay for 90 days.",
+        "citations": [{"revision_id": rev.id, "citation_excerpt": "90 days", "confidence_weight": 0.9, "is_primary": True}],
+    })
+    assert created.status_code == status.HTTP_201_CREATED
+    answer_id = created.json()["id"]
+    assert created.json()["impact_score"] >= 0.25
+
+    filtered = client.get(
+        "/api/citations/graph",
+        headers=headers,
+        params={"domain": "policy", "min_impact": 0.25, "recency_days": 30},
+    )
+    assert filtered.status_code == status.HTTP_200_OK
+    body = filtered.json()
+    assert body["summary"]["filters"]["domain"] == "policy"
+    assert body["summary"]["total_documents"] == 1
+    assert any(node["id"] == f"ans_{answer_id}" for node in body["nodes"])
+    assert all(node["category"] != "operations" for node in body["nodes"] if node["type"] == "document")
+    assert body["summary"]["cluster_count"] >= 1
+
+    hidden = client.get("/api/citations/graph", headers=headers, params={"domain": "operations", "min_impact": 0.7})
+    assert hidden.status_code == status.HTTP_200_OK
+    assert hidden.json()["nodes"] == []
+
+    assert client.get("/api/citations/graph", headers=headers, params={"min_impact": 1.5}).status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert client.get("/api/citations/graph", headers=headers, params={"recency_days": 0}).status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

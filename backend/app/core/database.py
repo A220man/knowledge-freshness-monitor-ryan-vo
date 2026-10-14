@@ -1,4 +1,3 @@
-"""Database engine and session management for SQLite persistence."""
 from typing import Generator
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker, Session

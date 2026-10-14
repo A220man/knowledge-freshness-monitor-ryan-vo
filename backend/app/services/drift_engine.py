@@ -1,23 +1,19 @@
-"""Deterministic offline lexical and semantic drift calculation engine."""
 import re
 import math
 from typing import List, Dict, Tuple, Set, Any
 
 
 def tokenize(text: str) -> List[str]:
-    """Extracts lowercase alphanumeric word tokens."""
     return re.findall(r"\b[a-zA-Z0-9_-]+\b", text.lower())
 
 
 def compute_shingles(tokens: List[str], k: int = 2) -> Set[Tuple[str, ...]]:
-    """Constructs k-gram shingles from a token list."""
     if len(tokens) < k:
         return {tuple(tokens)} if tokens else set()
     return {tuple(tokens[i : i + k]) for i in range(len(tokens) - k + 1)}
 
 
 def jaccard_distance(set_a: Set[Any], set_b: Set[Any]) -> float:
-    """Computes Jaccard distance: 1.0 - (intersection / union)."""
     if not set_a and not set_b:
         return 0.0
     union = set_a | set_b
@@ -28,7 +24,6 @@ def jaccard_distance(set_a: Set[Any], set_b: Set[Any]) -> float:
 
 
 def compute_tf_vector(tokens: List[str]) -> Dict[str, float]:
-    """Calculates term frequency counts for tokens."""
     tf: Dict[str, float] = {}
     for t in tokens:
         tf[t] = tf.get(t, 0.0) + 1.0
@@ -36,7 +31,6 @@ def compute_tf_vector(tokens: List[str]) -> Dict[str, float]:
 
 
 def cosine_distance(tf_a: Dict[str, float], tf_b: Dict[str, float]) -> float:
-    """Computes cosine distance (1.0 - cosine similarity) between two frequency vectors."""
     if not tf_a and not tf_b:
         return 0.0
     if not tf_a or not tf_b:
@@ -56,7 +50,6 @@ def cosine_distance(tf_a: Dict[str, float], tf_b: Dict[str, float]) -> float:
 
 
 def compute_drift_score(text_original: str, text_revised: str) -> float:
-    """Calculates composite normalized drift score between two texts in range [0.0, 1.0]."""
     if text_original.strip() == text_revised.strip():
         return 0.0
 
@@ -84,7 +77,6 @@ def compute_drift_score(text_original: str, text_revised: str) -> float:
 
 
 def classify_drift_magnitude(drift_score: float) -> str:
-    """Classifies drift severity level."""
     if drift_score <= 0.05:
         return "none"
     elif drift_score < 0.25:
@@ -99,7 +91,6 @@ def diff_chunks(
     chunks_original: List[str],
     chunks_revised: List[str]
 ) -> Dict[str, Any]:
-    """Compares chunks between revisions to identify modified, added, and retained chunks."""
     matched_orig: Set[int] = set()
     matched_rev: Set[int] = set()
     chunk_diffs: List[Dict[str, Any]] = []

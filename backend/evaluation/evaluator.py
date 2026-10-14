@@ -1,4 +1,3 @@
-"""Offline evaluation harness comparing drift and citation impact algorithms against labeled benchmarks."""
 import json
 import time
 from pathlib import Path
@@ -116,20 +115,12 @@ def run_benchmark_evaluation(dataset_path: str = None) -> Dict[str, Any]:
 
 def main():
     results = run_benchmark_evaluation()
-    print("==================================================")
-    print(" KNOWLEDGE FRESHNESS EVALUATION BENCHMARK RESULTS")
-    print("==================================================")
-    print(f"Total Test Cases:            {results['total_cases']}")
-    print(f"Revalidation Precision:      {results['precision'] * 100:.1f}%")
-    print(f"Revalidation Recall:         {results['recall'] * 100:.1f}%")
-    print(f"Revalidation F1 Score:       {results['f1_score']:.4f}")
-    print(f"Severity Match Accuracy:     {results['drift_detection_accuracy'] * 100:.1f}%")
-    print(f"Mean Latency Per Evaluation: {results['mean_latency_ms']:.3f} ms")
-    print(f"Failures (Misclassifications): {len(results['failure_cases'])}")
-    if results['failure_cases']:
-        for fc in results['failure_cases']:
-            print(f" - [{fc['id']}] {fc['description']} ({fc['type']}): Pred={fc['pred_severity']} Exp={fc['expected_severity']}")
-    print("==================================================")
+    keys = ("total_cases", "precision", "recall", "f1_score", "drift_detection_accuracy", "mean_latency_ms")
+    for key in keys:
+        print(f"{key}: {results[key]}")
+    print(f"failures: {len(results['failure_cases'])}")
+    for fc in results["failure_cases"]:
+        print(f"{fc['id']} {fc['type']} pred={fc['pred_severity']} exp={fc['expected_severity']}")
 
 
 if __name__ == "__main__":

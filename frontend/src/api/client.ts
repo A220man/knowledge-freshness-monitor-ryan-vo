@@ -110,7 +110,14 @@ export const api = {
       }),
     runImpactAnalysis: () =>
       request<ImpactAnalysisResponse>('/api/citations/impact-analysis', { method: 'POST' }),
-    getGraph: () => request<CitationGraphData>('/api/citations/graph'),
+    getGraph: (filters?: { domain?: string; minImpact?: number; recencyDays?: number }) => {
+      const params = new URLSearchParams();
+      if (filters?.domain) params.set('domain', filters.domain);
+      if (filters?.minImpact !== undefined) params.set('min_impact', String(filters.minImpact));
+      if (filters?.recencyDays !== undefined) params.set('recency_days', String(filters.recencyDays));
+      const query = params.toString();
+      return request<CitationGraphData>(`/api/citations/graph${query ? `?${query}` : ''}`);
+    },
     getAdvisoryReport: (answerId: string, providerOverride?: string) =>
       request<AdvisoryReportResponse>(`/api/citations/answers/${answerId}/advisory`, {
         method: 'POST',

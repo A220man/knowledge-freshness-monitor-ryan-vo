@@ -110,7 +110,7 @@ export const DocumentManager: React.FC = () => {
       <div className="section-toolbar">
         <div>
           <h2>Monitored Knowledge Documents</h2>
-          <p className="section-desc">Manage versioned documents, inspect chunk indexing, and track drift.</p>
+          <p className="section-desc">Versioned documents, chunks, and drift.</p>
         </div>
         <button onClick={() => setShowCreateModal(true)} disabled={user?.role === 'viewer'} className="btn-primary">
           + Ingest Document

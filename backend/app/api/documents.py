@@ -1,4 +1,3 @@
-"""Document lifecycle, revisions, and expiration monitoring API."""
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session

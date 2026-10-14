@@ -1,4 +1,3 @@
-"""Audit logging query endpoints for administrators."""
 from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session

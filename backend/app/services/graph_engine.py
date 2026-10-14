@@ -1,8 +1,7 @@
-"""Citation dependency graph engine and impact propagation algorithms."""
-from datetime import datetime, timezone
-from typing import Dict, List, Set, Any, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
-from backend.app.models.entities import Document, DocumentRevision, DocumentChunk, RagAnswer, CitationEdge
+from backend.app.models.entities import Document, DocumentRevision, RagAnswer, CitationEdge
 
 
 def evaluate_revision_freshness_status(revision: DocumentRevision, now: Optional[datetime] = None) -> str:
@@ -137,42 +136,111 @@ def propagate_all_impacts(db: Session) -> Dict[str, Any]:
     }
 
 
-def extract_citation_graph_data(db: Session) -> Dict[str, Any]:
-    documents = db.query(Document).all()
-    revisions = db.query(DocumentRevision).all()
-    answers = db.query(RagAnswer).all()
-    edges = db.query(CitationEdge).all()
+def _utc(value: Optional[datetime], fallback: datetime) -> datetime:
+    if value is None:
+        return fallback
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
-    nodes = [
+
+def extract_citation_graph_data(
+    db: Session, domain: Optional[str] = None, min_impact: Optional[float] = None,
+    recency_days: Optional[int] = None, now: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    moment = now or datetime.now(timezone.utc)
+    domain_key = (domain or "").strip().lower() or None
+    documents, revisions = db.query(Document).all(), db.query(DocumentRevision).all()
+    answers, edges = db.query(RagAnswer).all(), db.query(CitationEdge).all()
+    rev_by_id = {item.id: item for item in revisions}
+    ans_by_id = {item.id: item for item in answers}
+    allowed = {item.id for item in documents if domain_key is None or (item.category or "").strip().lower() == domain_key}
+    cutoff = moment - timedelta(days=recency_days) if recency_days else None
+
+    def keep(answer: RagAnswer) -> bool:
+        if min_impact is not None and float(answer.impact_score or 0.0) < min_impact:
+            return False
+        return cutoff is None or _utc(answer.created_at, moment) >= cutoff
+
+    filtering = domain_key is not None or min_impact is not None or cutoff is not None
+    kept = [e for e in edges if (a := ans_by_id.get(e.answer_id)) and (r := rev_by_id.get(e.revision_id)) and r.document_id in allowed and keep(a)]
+    if filtering:
+        answer_ids = {e.answer_id for e in kept}
+        if domain_key is None:
+            answer_ids.update(item.id for item in answers if keep(item))
+        rev_ids = {e.revision_id for e in kept if e.answer_id in answer_ids}
+        doc_ids = {rev_by_id[rid].document_id for rid in rev_ids}
+    else:
+        kept, answer_ids, rev_ids = list(edges), set(ans_by_id), set(rev_by_id)
+        doc_ids = {item.id for item in documents}
+    selected_docs = [item for item in documents if item.id in doc_ids]
+    selected_revs = [item for item in revisions if item.id in rev_ids and item.document_id in doc_ids]
+    selected_answers = [item for item in answers if item.id in answer_ids]
+    parent: Dict[str, str] = {}
+
+    def find(node_id: str) -> str:
+        parent.setdefault(node_id, node_id)
+        root = node_id
+        while parent[root] != root:
+            root = parent[root]
+        parent[node_id] = root
+        return root
+
+    def unite(left: str, right: str) -> None:
+        ra, rb = find(left), find(right)
+        if ra != rb:
+            parent[rb] = ra
+
+    for rev in selected_revs:
+        unite(f"doc_{rev.document_id}", f"rev_{rev.id}")
+    for edge in kept:
+        if edge.answer_id in answer_ids and edge.revision_id in rev_ids:
+            unite(f"ans_{edge.answer_id}", f"rev_{edge.revision_id}")
+    for doc in selected_docs:
+        find(f"doc_{doc.id}")
+    for answer in selected_answers:
+        find(f"ans_{answer.id}")
+    nodes: List[Dict[str, Any]] = [
         {"id": f"doc_{d.id}", "type": "document", "label": d.title, "category": d.category, "status": "active"}
-        for d in documents
+        for d in selected_docs
     ]
-    for r in revisions:
-        nodes.append({
-            "id": f"rev_{r.id}", "type": "revision", "label": f"v{r.version} ({r.status})",
-            "status": r.status, "drift_score": r.drift_score, "parent_doc_id": f"doc_{r.document_id}"
+    nodes.extend(
+        {"id": f"rev_{r.id}", "type": "revision", "label": f"v{r.version} ({r.status})", "status": r.status,
+         "drift_score": r.drift_score, "parent_doc_id": f"doc_{r.document_id}"}
+        for r in selected_revs
+    )
+    nodes.extend(
+        {"id": f"ans_{a.id}", "type": "answer", "label": (a.query_text or "")[:35] + ("..." if len(a.query_text or "") > 35 else ""),
+         "status": a.freshness_status, "impact_score": a.impact_score}
+        for a in selected_answers
+    )
+    groups: Dict[str, List[str]] = {}
+    for node in nodes:
+        groups.setdefault(find(node["id"]), []).append(node["id"])
+    impact_of = {f"ans_{a.id}": float(a.impact_score or 0.0) for a in selected_answers}
+    domain_of = {f"doc_{d.id}": d.category for d in selected_docs}
+    clusters = []
+    for root, members in groups.items():
+        scores = [impact_of[mid] for mid in members if mid in impact_of]
+        clusters.append({
+            "id": root, "node_ids": members,
+            "max_impact": round(max(scores) if scores else 0.0, 4),
+            "domains": sorted({domain_of[mid] for mid in members if domain_of.get(mid)}),
+            "answer_count": sum(mid.startswith("ans_") for mid in members),
         })
-    for a in answers:
-        nodes.append({
-            "id": f"ans_{a.id}", "type": "answer",
-            "label": a.query_text[:35] + ("..." if len(a.query_text) > 35 else ""),
-            "status": a.freshness_status, "impact_score": a.impact_score
-        })
-
-    links = [{"source": f"doc_{r.document_id}", "target": f"rev_{r.id}", "type": "has_revision", "weight": 1.0} for r in revisions]
-    for e in edges:
-        links.append({
-            "source": f"ans_{e.answer_id}", "target": f"rev_{e.revision_id}",
-            "type": "cites", "is_primary": e.is_primary, "weight": e.confidence_weight
-        })
-
+    clusters.sort(key=lambda item: (-item["max_impact"], item["id"]))
+    owned = {nid: cluster["id"] for cluster in clusters for nid in cluster["node_ids"]}
+    for node in nodes:
+        node["cluster_id"] = owned[node["id"]]
+    links = [{"source": f"doc_{r.document_id}", "target": f"rev_{r.id}", "type": "has_revision", "weight": 1.0} for r in selected_revs]
+    links.extend(
+        {"source": f"ans_{e.answer_id}", "target": f"rev_{e.revision_id}", "type": "cites", "is_primary": e.is_primary, "weight": e.confidence_weight}
+        for e in kept if e.answer_id in answer_ids and e.revision_id in rev_ids
+    )
     return {
-        "nodes": nodes,
-        "links": links,
+        "nodes": nodes, "links": links, "clusters": clusters,
         "summary": {
-            "total_documents": len(documents),
-            "total_revisions": len(revisions),
-            "total_answers": len(answers),
-            "total_citations": len(edges)
-        }
+            "total_documents": len(selected_docs), "total_revisions": len(selected_revs),
+            "total_answers": len(selected_answers), "total_citations": sum(link["type"] == "cites" for link in links),
+            "cluster_count": len(clusters),
+            "filters": {"domain": domain_key, "min_impact": min_impact, "recency_days": recency_days},
+        },
     }

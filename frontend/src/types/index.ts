@@ -134,6 +134,15 @@ export interface GraphNode {
   category?: string;
   drift_score?: number;
   impact_score?: number;
+  cluster_id?: string;
+}
+
+export interface GraphCluster {
+  id: string;
+  node_ids: string[];
+  max_impact: number;
+  domains: string[];
+  answer_count: number;
 }
 
 export interface GraphLink {
@@ -147,10 +156,12 @@ export interface GraphLink {
 export interface CitationGraphData {
   nodes: GraphNode[];
   links: GraphLink[];
+  clusters?: GraphCluster[];
   summary: {
     total_documents: number;
     total_revisions: number;
     total_answers: number;
     total_citations: number;
+    cluster_count?: number;
   };
 }

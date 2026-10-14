@@ -1,4 +1,3 @@
-"""Document lifecycle, chunking, versioning, and retention management."""
 import hashlib
 import json
 import re

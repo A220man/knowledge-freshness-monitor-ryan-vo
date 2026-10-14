@@ -1,7 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { CitationGraphData, RagAnswer, Document, AdvisoryReportResponse } from '../types';
 import { useAuth } from '../context/AuthContext';
+
+function nodeSpot(graph: CitationGraphData, id: string) {
+  const node = graph.nodes.find((n) => n.id === id);
+  const clusters = graph.clusters?.length ? graph.clusters : [{ id: 'all', node_ids: graph.nodes.map((n) => n.id), domains: [] as string[] }];
+  const ci = Math.max(0, clusters.findIndex((c) => c.node_ids.includes(id)));
+  const column = node?.type === 'document' ? 90 : node?.type === 'revision' ? 300 : 520;
+  const same = clusters[ci].node_ids.filter((nid) => graph.nodes.find((n) => n.id === nid)?.type === node?.type);
+  return { x: column, y: 40 + ci * 88 + Math.max(0, same.indexOf(id)) * 22 };
+}
 
 export const CitationGraphView: React.FC = () => {
   const { user } = useAuth();
@@ -21,27 +30,38 @@ export const CitationGraphView: React.FC = () => {
   const [confidenceWeight, setConfidenceWeight] = useState(0.9);
   const [isPrimary, setIsPrimary] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [domainFilter, setDomainFilter] = useState('');
+  const [impactFilter, setImpactFilter] = useState('');
+  const [recencyFilter, setRecencyFilter] = useState('');
+  const requestSeq = useRef(0);
 
   const fetchGraphAndAnswers = async () => {
+    const seq = ++requestSeq.current;
     try {
       setLoading(true);
       setError(null);
       const [gData, aData, dData] = await Promise.all([
-        api.citations.getGraph(),
+        api.citations.getGraph({
+          domain: domainFilter.trim() || undefined,
+          minImpact: impactFilter === '' ? undefined : Number(impactFilter),
+          recencyDays: recencyFilter === '' ? undefined : Number(recencyFilter)
+        }),
         api.citations.listAnswers(),
         api.documents.list()
       ]);
+      if (seq !== requestSeq.current) return;
       setGraphData(gData);
       setAnswers(aData);
       setDocuments(dData);
     } catch (err: any) {
+      if (seq !== requestSeq.current) return;
       setError(err.message || 'Failed to load graph');
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchGraphAndAnswers(); }, []);
+  useEffect(() => { fetchGraphAndAnswers(); }, [domainFilter, impactFilter, recencyFilter]);
 
   const handleSelectAnswer = async (ansId: string) => {
     try {
@@ -91,17 +111,38 @@ export const CitationGraphView: React.FC = () => {
     }
   };
 
+  const filtersActive = Boolean(domainFilter.trim() || impactFilter || recencyFilter);
+  const visibleAnswerIds = new Set(
+    (graphData?.nodes ?? []).filter((n) => n.type === 'answer').map((n) => n.id.replace(/^ans_/, ''))
+  );
+  const visibleAnswers = filtersActive ? answers.filter((a) => visibleAnswerIds.has(a.id)) : answers;
+
   return (
     <div className="graph-view-container">
       <div className="section-toolbar">
         <div>
           <h2>RAG Citation Dependency Graph</h2>
-          <p className="section-desc">Directed topology connecting documents to downstream RAG answers.</p>
+          <p className="section-desc">Documents, revisions, and the RAG answers that cite them.</p>
         </div>
         <button onClick={() => setShowRegisterModal(true)} disabled={user?.role === 'viewer'} className="btn-primary">
           + Index RAG Answer
         </button>
       </div>
+
+      <form className="filter-bar" onSubmit={(e) => e.preventDefault()}>
+        <input aria-label="Document domain" className="filter-select" placeholder="All domains" value={domainFilter} onChange={(e) => setDomainFilter(e.target.value)} />
+        <select aria-label="Impact threshold" className="filter-select" value={impactFilter} onChange={(e) => setImpactFilter(e.target.value)}>
+          <option value="">Any impact</option>
+          <option value="0.25">≥ 0.25</option>
+          <option value="0.7">≥ 0.70</option>
+        </select>
+        <select aria-label="Answer recency" className="filter-select" value={recencyFilter} onChange={(e) => setRecencyFilter(e.target.value)}>
+          <option value="">Any age</option>
+          <option value="7">7 days</option>
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+        </select>
+      </form>
 
       {error && <div className="alert alert-error"><span>⚠️ {error}</span><button onClick={() => setError(null)} className="btn-close">×</button></div>}
 
@@ -120,49 +161,49 @@ export const CitationGraphView: React.FC = () => {
             </div>
 
             <div className="svg-container">
-              <svg width="100%" height="260" viewBox="0 0 650 260" className="topology-svg">
-                <defs>
-                  <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                    <polygon points="0 0, 6 3, 0 6" fill="#94a3b8" />
-                  </marker>
-                </defs>
-                {graphData?.links.map((l, i) => (
-                  <line
-                    key={`l-${i}`}
-                    x1={l.type === 'has_revision' ? 100 : 320}
-                    y1={50 + (i * 35) % 180}
-                    x2={l.type === 'has_revision' ? 300 : 540}
-                    y2={70 + (i * 40) % 170}
-                    stroke={l.is_primary ? '#38bdf8' : '#94a3b8'}
-                    strokeWidth={l.is_primary ? 2.2 : 1.2}
-                    markerEnd="url(#arrow)"
-                  />
-                ))}
-                {graphData?.nodes.map((n, i) => {
-                  const cx = n.type === 'document' ? 90 : n.type === 'revision' ? 300 : 540;
-                  const cy = 40 + (i * 40) % 190;
-                  const fill = n.type === 'document' ? '#0284c7' : (n.status === 'fresh' ? '#10b981' : n.status === 'stale' ? '#f59e0b' : '#ef4444');
-                  return (
-                    <g key={n.id} className="node-group" onClick={() => n.type === 'answer' && handleSelectAnswer(n.id.replace('ans_', ''))}>
-                      <circle cx={cx} cy={cy} r="14" fill={fill} />
-                      <text x={cx} y={cy + 24} textAnchor="middle" className="node-text">{n.label.slice(0, 16)}</text>
-                    </g>
-                  );
-                })}
-              </svg>
+              {graphData && graphData.nodes.length === 0 ? (
+                <div className="empty-state"><p>No matching clusters.</p></div>
+              ) : graphData && (
+                <svg width="100%" height={Math.max(220, (graphData.clusters?.length || 1) * 88 + 16)} viewBox={`0 0 650 ${Math.max(220, (graphData.clusters?.length || 1) * 88 + 16)}`} className="topology-svg">
+                  <defs>
+                    <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                      <polygon points="0 0, 6 3, 0 6" fill="#94a3b8" />
+                    </marker>
+                  </defs>
+                  {(graphData.clusters ?? []).map((c, i) => (
+                    <text key={c.id} x="8" y={16 + i * 88} className="node-text">Cluster {i + 1}{c.domains.length ? ` · ${c.domains.join(', ')}` : ''}</text>
+                  ))}
+                  {graphData.links.map((l, i) => {
+                    const a = nodeSpot(graphData, l.source);
+                    const b = nodeSpot(graphData, l.target);
+                    return <line key={`l-${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={l.is_primary ? '#38bdf8' : '#94a3b8'} strokeWidth={l.is_primary ? 2.2 : 1.2} markerEnd="url(#arrow)" />;
+                  })}
+                  {graphData.nodes.map((n) => {
+                    const p = nodeSpot(graphData, n.id);
+                    const fill = n.type === 'document' ? '#0284c7' : (n.status === 'fresh' ? '#10b981' : n.status === 'stale' ? '#f59e0b' : '#ef4444');
+                    return (
+                      <g key={n.id} className="node-group" onClick={() => n.type === 'answer' && handleSelectAnswer(n.id.replace('ans_', ''))}>
+                        <circle cx={p.x} cy={p.y} r="12" fill={fill} />
+                        <text x={p.x} y={p.y + 20} textAnchor="middle" className="node-text">{n.label.slice(0, 16)}</text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              )}
             </div>
             <div className="topology-stats">
               <span>{graphData?.summary.total_documents} Documents</span>
               <span>{graphData?.summary.total_revisions} Revisions</span>
               <span>{graphData?.summary.total_answers} Answers</span>
               <span>{graphData?.summary.total_citations} Citations</span>
+              <span>{graphData?.summary.cluster_count ?? graphData?.clusters?.length ?? (graphData && graphData.nodes.length ? 1 : 0)} Clusters</span>
             </div>
           </div>
 
           <div className="graph-answers-pane card">
             <h3>Registered Answers</h3>
             <div className="answers-list" style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '1rem' }}>
-              {answers.map((a) => (
+              {visibleAnswers.length === 0 ? <p className="section-desc">No answers in view.</p> : visibleAnswers.map((a) => (
                 <div key={a.id} className={`answer-item ${selectedAnswer?.id === a.id ? 'active' : ''}`} onClick={() => handleSelectAnswer(a.id)}>
                   <div className="ans-query">{a.query_text}</div>
                   <div className="ans-meta">

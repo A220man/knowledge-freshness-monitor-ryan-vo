@@ -1,4 +1,3 @@
-"""SQLAlchemy database entities representing documents, citations, tasks, and sessions."""
 from datetime import datetime, timezone
 import uuid
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, ForeignKey

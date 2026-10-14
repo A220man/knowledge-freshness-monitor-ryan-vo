@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
@@ -12,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Citation subgraph filters for document domain, minimum impact, and answer recency, with connected components isolated as clusters in the API and graph view.
 - Filtered revalidation task CSV export by status and priority level across API and UI.
 - Direct synchronization of active queue filter parameters with CSV export URL generation.
 - Automated regression coverage for combined filter criteria, empty-set export handling, and formula neutralization.

@@ -111,12 +111,10 @@ export const DashboardMetrics: React.FC = () => {
         <div className="metric-card">
           <div className="metric-label">Monitored Documents</div>
           <div className="metric-value">{documents.length}</div>
-          <div className="metric-detail">Continuous retention tracking</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Tracked RAG Answers</div>
           <div className="metric-value">{answers.length}</div>
-          <div className="metric-detail">Active citation nodes</div>
         </div>
         <div className="metric-card warning">
           <div className="metric-label">Stale Answers</div>

@@ -43,6 +43,7 @@ flowchart LR
 - **Directed Graph Mapping**: Links RAG answers to versioned document revisions and granular chunk IDs with confidence weights and primary citation indicators.
 - **Deterministic Reachability & Impact Traversal**: Propagates document updates and expirations through the dependency DAG without requiring LLM invocations.
 - **Severity Classification**: Ranks answer vulnerability into `fresh`, `stale` (impact $\ge 0.25$), or `critical_stale` (impact $\ge 0.70$ or primary citation breach).
+- **Subgraph Filters**: Narrows the citation DAG by document domain, minimum impact, and answer recency, then lays out each remaining connected component as its own cluster.
 
 ### 3. Prioritized Revalidation Task Queue
 - **Automated Priority Scoring**: Ranks tasks based on answer impact score, primary citation compromise, and citation breadth.
@@ -126,7 +127,7 @@ The evaluation suite evaluates 20 curated RAG revision drift scenarios in `backe
 | `DELETE`| `/api/documents/{id}` | Admin | Delete document and cascade delete citations |
 | `GET` | `/api/citations/answers` | Viewer | List tracked RAG answers and freshness statuses |
 | `POST` | `/api/citations/answers` | Analyst | Register generated RAG answer and bind citation edges |
-| `GET` | `/api/citations/graph` | Viewer | Retrieve node-link topology for visualization |
+| `GET` | `/api/citations/graph` | Viewer | Retrieve node-link topology. Optional `domain`, `min_impact` (0–1), and `recency_days` isolate matching clusters |
 | `POST` | `/api/citations/impact-analysis` | Analyst | Traverse graph and propagate updated impact scores |
 | `POST` | `/api/citations/answers/{id}/advisory` | Analyst | Generate opt-in advisory revalidation report |
 | `GET` | `/api/revalidation/tasks` | Viewer | List prioritized revalidation queue items |
