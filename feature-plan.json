@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "citation-subgraph-filtering",
+  "current_feature": "automated-drift-webhook-notifications",
   "features": [
     {
       "id": "document-drift-tracking",
@@ -159,13 +159,20 @@
     {
       "id": "automated-drift-webhook-notifications",
       "title": "Automated Drift Webhook Notifications",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Dispatch webhook alerts when answers transition to critical_stale status",
         "Support retry backoff and HMAC signature verification"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/services/webhook_service.py",
+        "backend/app/services/graph_engine.py",
+        "backend/app/api/webhooks.py",
+        "backend/app/core/config.py"
+      ],
+      "tests": [
+        "backend/tests/test_webhook_service.py"
+      ]
     }
   ]
 }

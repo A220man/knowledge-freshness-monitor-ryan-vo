@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.1.0`.
+Current version: `1.3.0`.
 
 Knowledge Freshness Monitor addresses the critical challenge of silent staleness in Retrieval-Augmented Generation (RAG) pipelines, where underlying source documents update, expire, or get superseded while cached answers continue citing obsolete context. The system implements a deterministic citation graph propagation engine combined with chunk-level lexical and semantic drift analysis to trace revision impacts across downstream query answers and schedule prioritized revalidation tasks. It is built for AI platform engineers, RAG operators, and enterprise knowledge managers requiring high assurance in generative knowledge retrieval.
 
@@ -60,6 +60,12 @@ flowchart LR
 - **SAML Upstream Federation**: Keycloak realm configuration enables upstream enterprise SAML IdP identity brokering.
 - **Role-Based Access Control**: Strict `viewer`, `analyst`, and `admin` permission gates on all data mutations.
 - **Production Guardrails**: Local demo mode binds strictly to localhost and is refused at startup if `ENVIRONMENT=production`.
+
+### 6. Automated Drift Webhook Notifications
+- **Critical Staleness Alerts**: Dispatches webhook notifications when RAG answers transition to `critical_stale` status during impact analysis.
+- **Retry with Exponential Backoff**: Configurable retry attempts with exponential backoff delay for resilient delivery.
+- **HMAC-SHA256 Signature Verification**: Signs payloads with a shared secret for receiver authenticity verification.
+- **Admin Configuration API**: Secure endpoints to inspect webhook configuration and send test notifications.
 
 ---
 
@@ -137,6 +143,8 @@ The evaluation suite evaluates 20 curated RAG revision drift scenarios in `backe
 | `GET` | `/api/revalidation/export` | Viewer | Export revalidation task queue as CSV (supports `status_filter` and `priority_filter`) |
 | `GET` | `/api/evaluation/run` | Viewer | Execute offline benchmark suite and return metrics |
 | `GET` | `/api/audit` | Admin | Query immutable administrative audit trail logs |
+| `GET` | `/api/webhooks/config` | Admin | Inspect webhook configuration status |
+| `POST` | `/api/webhooks/test` | Admin | Send test webhook notification |
 
 ---
 
@@ -159,6 +167,11 @@ Configuration settings are loaded via environment variables or a `.env` file.
 | `LLM_BASE_URL` | `https://llm.chris-vo.com/v1` | Public OpenAI-compatible API base URL |
 | `LLM_API_KEY` | *(blank)* | API key for LLM advisory (keys kept server-side only) |
 | `LLM_REQUEST_TIMEOUT_SECONDS` | `15` | Bounded network timeout for advisory calls |
+| `WEBHOOK_URL` | *(blank)* | HTTP endpoint for drift alert notifications |
+| `WEBHOOK_SECRET` | *(blank)* | Shared secret for HMAC-SHA256 payload signing |
+| `WEBHOOK_MAX_RETRIES` | `3` | Maximum retry attempts for failed webhook delivery |
+| `WEBHOOK_RETRY_BASE_DELAY_SECONDS` | `5` | Base delay for exponential backoff retry |
+| `WEBHOOK_TIMEOUT_SECONDS` | `10` | HTTP timeout for webhook requests |
 
 ---
 

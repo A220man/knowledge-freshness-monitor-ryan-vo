@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.3.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
@@ -16,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automated drift webhook notifications with retry backoff and HMAC-SHA256 signature verification for critical_stale answer transitions.
+- Webhook configuration API endpoints (admin-only) for status inspection and test dispatch.
+- Comprehensive webhook service test suite covering configuration, signing, dispatch, retry logic, and critical_stale event notification.
 - Citation subgraph filters for document domain, minimum impact, and answer recency, with connected components isolated as clusters in the API and graph view.
 - Filtered revalidation task CSV export by status and priority level across API and UI.
 - Direct synchronization of active queue filter parameters with CSV export URL generation.

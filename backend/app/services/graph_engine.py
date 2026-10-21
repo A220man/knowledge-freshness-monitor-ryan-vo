@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 from sqlalchemy.orm import Session
 from backend.app.models.entities import Document, DocumentRevision, RagAnswer, CitationEdge
-
+from backend.app.services.webhook_service import notify_critical_stale_transition
 
 def evaluate_revision_freshness_status(revision: DocumentRevision, now: Optional[datetime] = None) -> str:
     if now is None:
@@ -97,7 +97,6 @@ def calculate_answer_impact(answer: RagAnswer, now: Optional[datetime] = None) -
         "affected_revisions": list(set(affected_revisions))
     }
 
-
 def propagate_all_impacts(db: Session) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
     answers = db.query(RagAnswer).all()
@@ -120,6 +119,48 @@ def propagate_all_impacts(db: Session) -> Dict[str, Any]:
                 "primary_citation_stale": eval_result["primary_citation_stale"],
                 "affected_revisions": eval_result["affected_revisions"]
             })
+
+            # Dispatch webhook if transitioned to critical_stale
+            if prior_status != "critical_stale" and ans.freshness_status == "critical_stale":
+                # Use a background task to avoid blocking the API response
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(notify_critical_stale_transition(
+                            answer_id=ans.id,
+                            query_text=ans.query_text,
+                            prior_status=prior_status,
+                            current_status=ans.freshness_status,
+                            impact_score=ans.impact_score,
+                            stale_reasons=eval_result["stale_reasons"],
+                            primary_citation_stale=eval_result["primary_citation_stale"],
+                            affected_revisions=eval_result["affected_revisions"]
+                        ))
+                    else:
+                        asyncio.run(notify_critical_stale_transition(
+                            answer_id=ans.id,
+                            query_text=ans.query_text,
+                            prior_status=prior_status,
+                            current_status=ans.freshness_status,
+                            impact_score=ans.impact_score,
+                            stale_reasons=eval_result["stale_reasons"],
+                            primary_citation_stale=eval_result["primary_citation_stale"],
+                            affected_revisions=eval_result["affected_revisions"]
+                        ))
+                except RuntimeError:
+                    # No event loop, run synchronously
+                    import asyncio
+                    asyncio.run(notify_critical_stale_transition(
+                        answer_id=ans.id,
+                        query_text=ans.query_text,
+                        prior_status=prior_status,
+                        current_status=ans.freshness_status,
+                        impact_score=ans.impact_score,
+                        stale_reasons=eval_result["stale_reasons"],
+                        primary_citation_stale=eval_result["primary_citation_stale"],
+                        affected_revisions=eval_result["affected_revisions"]
+                    ))
 
     db.commit()
     docs_count = db.query(Document).count()
