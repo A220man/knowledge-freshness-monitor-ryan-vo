@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-citation-subgraph-filtering
+automated-drift-webhook-notifications
 
 ## Roadmap
 
@@ -113,9 +113,13 @@ Tests: `backend/tests/test_graph_engine.py`, `backend/tests/test_citations_api.p
 
 ### automated-drift-webhook-notifications — Automated Drift Webhook Notifications
 
-Status: planned
+Status: done
 
 Acceptance:
 - Dispatch webhook alerts when answers transition to critical_stale status
 - Support retry backoff and HMAC signature verification
+
+Implementation: `backend/app/services/webhook_service.py`, `backend/app/services/graph_engine.py`, `backend/app/api/webhooks.py`, `backend/app/core/config.py`
+
+Tests: `backend/tests/test_webhook_service.py`
 

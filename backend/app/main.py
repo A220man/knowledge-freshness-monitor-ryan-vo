@@ -10,6 +10,7 @@ from backend.app.api.citations import router as citations_router
 from backend.app.api.revalidation import router as revalidation_router
 from backend.app.api.evaluation import router as evaluation_router
 from backend.app.api.audit import router as audit_router
+from backend.app.api.webhooks import router as webhooks_router
 from backend.app.services.document_service import create_document
 from backend.app.models.entities import Document, RagAnswer, CitationEdge, DocumentRevision
 
@@ -110,6 +111,7 @@ app.include_router(citations_router)
 app.include_router(revalidation_router)
 app.include_router(evaluation_router)
 app.include_router(audit_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/api/health")

@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://llm.chris-vo.com/v1"
     LLM_API_KEY: str = ""
     LLM_REQUEST_TIMEOUT_SECONDS: int = 15
+    # Webhook Notification Settings
+    WEBHOOK_URL: str = ""
+    WEBHOOK_SECRET: str = ""
+    WEBHOOK_MAX_RETRIES: int = 3
+    WEBHOOK_RETRY_BASE_DELAY_SECONDS: int = 5
+    WEBHOOK_TIMEOUT_SECONDS: int = 10
+
 
     def validate_production_guards(self) -> None:
         """Enforces security boundaries for production deployments."""
@@ -40,5 +47,5 @@ class Settings(BaseSettings):
             if "dev-secret-key" in self.SECRET_KEY:
                 raise RuntimeError("Startup refused: Default insecure SECRET_KEY cannot be used in production.")
 
-
 settings = Settings()
+
