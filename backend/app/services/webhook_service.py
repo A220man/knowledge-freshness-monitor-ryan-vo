@@ -1,5 +1,6 @@
 """Webhook notification service with retry backoff and HMAC signature verification."""
 
+import asyncio
 import hashlib
 import hmac
 import json
@@ -100,7 +101,7 @@ class WebhookService:
             # Exponential backoff with jitter
             if attempt < config["max_retries"]:
                 delay = config["base_delay"] * (2 ** attempt)
-                time.sleep(delay)
+                await asyncio.sleep(delay)
 
         return {
             "success": False,
