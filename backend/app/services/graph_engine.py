@@ -125,32 +125,19 @@ def propagate_all_impacts(db: Session) -> Dict[str, Any]:
                 # Use a background task to avoid blocking the API response
                 import asyncio
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        loop.create_task(notify_critical_stale_transition(
-                            answer_id=ans.id,
-                            query_text=ans.query_text,
-                            prior_status=prior_status,
-                            current_status=ans.freshness_status,
-                            impact_score=ans.impact_score,
-                            stale_reasons=eval_result["stale_reasons"],
-                            primary_citation_stale=eval_result["primary_citation_stale"],
-                            affected_revisions=eval_result["affected_revisions"]
-                        ))
-                    else:
-                        asyncio.run(notify_critical_stale_transition(
-                            answer_id=ans.id,
-                            query_text=ans.query_text,
-                            prior_status=prior_status,
-                            current_status=ans.freshness_status,
-                            impact_score=ans.impact_score,
-                            stale_reasons=eval_result["stale_reasons"],
-                            primary_citation_stale=eval_result["primary_citation_stale"],
-                            affected_revisions=eval_result["affected_revisions"]
-                        ))
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(notify_critical_stale_transition(
+                        answer_id=ans.id,
+                        query_text=ans.query_text,
+                        prior_status=prior_status,
+                        current_status=ans.freshness_status,
+                        impact_score=ans.impact_score,
+                        stale_reasons=eval_result["stale_reasons"],
+                        primary_citation_stale=eval_result["primary_citation_stale"],
+                        affected_revisions=eval_result["affected_revisions"]
+                    ))
                 except RuntimeError:
-                    # No event loop, run synchronously
-                    import asyncio
+                    # No running event loop, run in a new loop
                     asyncio.run(notify_critical_stale_transition(
                         answer_id=ans.id,
                         query_text=ans.query_text,
