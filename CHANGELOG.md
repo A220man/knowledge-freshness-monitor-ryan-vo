@@ -1,8 +1,15 @@
 # Changelog
 
+## 1.6.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.5.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Added (this round)
+- Structured logging for webhook service dispatch operations with retry details, response codes, timing, and error metadata.
 
 ## 1.4.0 — work-in-progress checkpoint
 

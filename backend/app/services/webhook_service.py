@@ -4,11 +4,15 @@ import asyncio
 import hashlib
 import hmac
 import json
+import logging
 import time
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 import httpx
 from backend.app.core.config import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class WebhookService:
@@ -54,6 +58,7 @@ class WebhookService:
         """
         config = self._get_config()
         if not config["url"] or not config["url"].strip():
+            logger.warning("Webhook dispatch skipped: URL not configured")
             return {
                 "success": False,
                 "skipped": True,
@@ -83,6 +88,15 @@ class WebhookService:
                         headers=headers
                     )
                     if 200 <= response.status_code < 300:
+                        logger.info(
+                            "Webhook dispatch succeeded",
+                            extra={
+                                "event_type": event_type,
+                                "attempt": attempt + 1,
+                                "status_code": response.status_code,
+                                "response_time_ms": round(response.elapsed.total_seconds() * 1000, 2)
+                            }
+                        )
                         return {
                             "success": True,
                             "status_code": response.status_code,
@@ -91,18 +105,69 @@ class WebhookService:
                         }
                     else:
                         last_error = f"HTTP {response.status_code}: {response.text[:200]}"
+                        logger.warning(
+                            "Webhook dispatch failed with non-2xx status",
+                            extra={
+                                "event_type": event_type,
+                                "attempt": attempt + 1,
+                                "status_code": response.status_code,
+                                "error": last_error
+                            }
+                        )
             except httpx.TimeoutException:
                 last_error = f"Timeout after {config['timeout']}s"
+                logger.warning(
+                    "Webhook dispatch timeout",
+                    extra={
+                        "event_type": event_type,
+                        "attempt": attempt + 1,
+                        "timeout_seconds": config["timeout"]
+                    }
+                )
             except httpx.RequestError as e:
                 last_error = f"Request error: {type(e).__name__}"
+                logger.warning(
+                    "Webhook dispatch request error",
+                    extra={
+                        "event_type": event_type,
+                        "attempt": attempt + 1,
+                        "error_type": type(e).__name__,
+                        "error": str(e)
+                    }
+                )
             except Exception as e:
                 last_error = f"Unexpected error: {type(e).__name__}"
+                logger.exception(
+                    "Webhook dispatch unexpected error",
+                    extra={
+                        "event_type": event_type,
+                        "attempt": attempt + 1,
+                        "error_type": type(e).__name__,
+                        "error": str(e)
+                    }
+                )
 
             # Exponential backoff with jitter
             if attempt < config["max_retries"]:
                 delay = config["base_delay"] * (2 ** attempt)
+                logger.info(
+                    "Webhook dispatch retrying",
+                    extra={
+                        "event_type": event_type,
+                        "next_attempt": attempt + 2,
+                        "delay_seconds": delay
+                    }
+                )
                 await asyncio.sleep(delay)
 
+        logger.error(
+            "Webhook dispatch failed after all retries",
+            extra={
+                "event_type": event_type,
+                "total_attempts": config["max_retries"] + 1,
+                "final_error": last_error
+            }
+        )
         return {
             "success": False,
             "skipped": False,
@@ -138,4 +203,8 @@ async def notify_critical_stale_transition(
         "primary_citation_stale": primary_citation_stale,
         "affected_revisions": affected_revisions
     }
+    logger.info(
+        "Dispatching critical_stale webhook notification",
+        extra={"answer_id": answer_id, "impact_score": impact_score}
+    )
     return await webhook_service.dispatch("answer.critical_stale", data)
