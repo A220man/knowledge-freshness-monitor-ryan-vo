@@ -98,7 +98,7 @@ def add_document_revision(
     document_id: str,
     new_content: str,
     expiration_days: Optional[int] = None
-) -> DocumentRevision:
+) -> tuple[DocumentRevision, List[Dict[str, Any]]]:
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise ValueError(f"Document with id {document_id} not found.")
@@ -144,11 +144,12 @@ def add_document_revision(
     doc.updated_at = now
     db.commit()
     db.refresh(new_rev)
-    propagate_all_impacts(db)
-    return new_rev
+    propagation_result = propagate_all_impacts(db)
+    webhook_notifications = propagation_result.get("webhook_notifications", [])
+    return new_rev, webhook_notifications
 
 
-def check_and_update_expirations(db: Session) -> Dict[str, int]:
+def check_and_update_expirations(db: Session) -> tuple[Dict[str, int], List[Dict[str, Any]]]:
     now = datetime.now(timezone.utc)
     active_revisions = db.query(DocumentRevision).filter(
         DocumentRevision.status.in_(["fresh", "stale"]),
@@ -164,7 +165,9 @@ def check_and_update_expirations(db: Session) -> Dict[str, int]:
             rev.status = "expired"
             expired_count += 1
 
+    webhook_notifications: List[Dict[str, Any]] = []
     if expired_count > 0:
         db.commit()
-        propagate_all_impacts(db)
-    return {"expired_count": expired_count}
+        propagation_result = propagate_all_impacts(db)
+        webhook_notifications = propagation_result.get("webhook_notifications", [])
+    return {"expired_count": expired_count}, webhook_notifications

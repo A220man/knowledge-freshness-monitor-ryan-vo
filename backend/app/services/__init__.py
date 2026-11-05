@@ -5,6 +5,7 @@ from backend.app.services.graph_engine import (
     propagate_all_impacts,
     extract_citation_graph_data,
     evaluate_revision_freshness_status,
+    dispatch_webhook_notifications
 )
 from backend.app.services.scheduler_service import (
     calculate_task_priority,
@@ -25,6 +26,7 @@ __all__ = [
     "propagate_all_impacts",
     "extract_citation_graph_data",
     "evaluate_revision_freshness_status",
+    "dispatch_webhook_notifications",
     "calculate_task_priority",
     "schedule_revalidation_task",
     "schedule_batch_revalidations",

@@ -15,6 +15,7 @@ from backend.app.services.document_service import (
     add_document_revision,
     check_and_update_expirations
 )
+from backend.app.services.graph_engine import dispatch_webhook_notifications
 from backend.app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
@@ -62,29 +63,37 @@ def get_document_details(
 
 
 @router.post("/{document_id}/revisions", response_model=DocumentRevisionResponse, status_code=status.HTTP_201_CREATED)
-def submit_new_revision(
+async def submit_new_revision(
     document_id: str,
     payload: DocumentRevisionCreate,
     session: UserSession = Depends(require_analyst),
     db: Session = Depends(get_db)
 ) -> DocumentRevision:
     try:
-        rev = add_document_revision(
+        rev, webhook_notifications = add_document_revision(
             db=db, document_id=document_id, new_content=payload.text_content, expiration_days=payload.expiration_days
         )
         log_action(db=db, user_id=session.user_id, action="document.revision_add", resource_type="document_revision", resource_id=rev.id, details={})
+        
+        if webhook_notifications:
+            await dispatch_webhook_notifications(webhook_notifications)
+        
         return rev
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
 @router.post("/check-expirations", response_model=Dict[str, int])
-def trigger_expiration_scan(
+async def trigger_expiration_scan(
     session: UserSession = Depends(require_analyst),
     db: Session = Depends(get_db)
 ) -> Dict[str, int]:
-    results = check_and_update_expirations(db)
+    results, webhook_notifications = check_and_update_expirations(db)
     log_action(db=db, user_id=session.user_id, action="document.expiration_scan", resource_type="system", resource_id="expiration", details=results)
+    
+    if webhook_notifications:
+        await dispatch_webhook_notifications(webhook_notifications)
+    
     return results
 
 
