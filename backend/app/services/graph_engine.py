@@ -98,9 +98,14 @@ def calculate_answer_impact(answer: RagAnswer, now: Optional[datetime] = None) -
     }
 
 def propagate_all_impacts(db: Session) -> Dict[str, Any]:
+    """
+    Evaluate all RAG answers for freshness impact and return results with
+    any critical_stale transitions that need webhook notifications.
+    """
     now = datetime.now(timezone.utc)
     answers = db.query(RagAnswer).all()
     impacted_items: List[Dict[str, Any]] = []
+    webhook_notifications: List[Dict[str, Any]] = []
 
     for ans in answers:
         prior_status = ans.freshness_status
@@ -120,34 +125,18 @@ def propagate_all_impacts(db: Session) -> Dict[str, Any]:
                 "affected_revisions": eval_result["affected_revisions"]
             })
 
-            # Dispatch webhook if transitioned to critical_stale
+            # Track critical_stale transitions for webhook notification
             if prior_status != "critical_stale" and ans.freshness_status == "critical_stale":
-                # Use a background task to avoid blocking the API response
-                import asyncio
-                try:
-                    loop = asyncio.get_running_loop()
-                    loop.create_task(notify_critical_stale_transition(
-                        answer_id=ans.id,
-                        query_text=ans.query_text,
-                        prior_status=prior_status,
-                        current_status=ans.freshness_status,
-                        impact_score=ans.impact_score,
-                        stale_reasons=eval_result["stale_reasons"],
-                        primary_citation_stale=eval_result["primary_citation_stale"],
-                        affected_revisions=eval_result["affected_revisions"]
-                    ))
-                except RuntimeError:
-                    # No running event loop, run in a new loop
-                    asyncio.run(notify_critical_stale_transition(
-                        answer_id=ans.id,
-                        query_text=ans.query_text,
-                        prior_status=prior_status,
-                        current_status=ans.freshness_status,
-                        impact_score=ans.impact_score,
-                        stale_reasons=eval_result["stale_reasons"],
-                        primary_citation_stale=eval_result["primary_citation_stale"],
-                        affected_revisions=eval_result["affected_revisions"]
-                    ))
+                webhook_notifications.append({
+                    "answer_id": ans.id,
+                    "query_text": ans.query_text,
+                    "prior_status": prior_status,
+                    "current_status": ans.freshness_status,
+                    "impact_score": ans.impact_score,
+                    "stale_reasons": eval_result["stale_reasons"],
+                    "primary_citation_stale": eval_result["primary_citation_stale"],
+                    "affected_revisions": eval_result["affected_revisions"]
+                })
 
     db.commit()
     docs_count = db.query(Document).count()
@@ -160,8 +149,30 @@ def propagate_all_impacts(db: Session) -> Dict[str, Any]:
         "stale_or_expired_revisions": stale_rev_count,
         "total_answers_evaluated": len(answers),
         "impacted_answers_count": len(impacted_items),
-        "impacted_answers": impacted_items
+        "impacted_answers": impacted_items,
+        "webhook_notifications": webhook_notifications
     }
+
+
+async def dispatch_webhook_notifications(notifications: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Dispatch webhook notifications for critical_stale transitions.
+    Should be called after propagate_all_impacts completes.
+    """
+    results = []
+    for notification in notifications:
+        result = await notify_critical_stale_transition(
+            answer_id=notification["answer_id"],
+            query_text=notification["query_text"],
+            prior_status=notification["prior_status"],
+            current_status=notification["current_status"],
+            impact_score=notification["impact_score"],
+            stale_reasons=notification["stale_reasons"],
+            primary_citation_stale=notification["primary_citation_stale"],
+            affected_revisions=notification["affected_revisions"]
+        )
+        results.append(result)
+    return results
 
 
 def _utc(value: Optional[datetime], fallback: datetime) -> datetime:

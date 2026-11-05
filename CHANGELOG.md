@@ -1,8 +1,18 @@
 # Changelog
 
+## 1.7.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.6.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Fixed (this round)
+- Webhook notification dispatch now works correctly from async API endpoints
+- `propagate_all_impacts` returns webhook notifications instead of attempting inline async dispatch
+- New `dispatch_webhook_notifications` async function handles proper webhook delivery with retry logic
+- API endpoints `/api/citations/impact-analysis`, `/api/documents/{id}/revisions`, `/api/documents/check-expirations` now async and dispatch webhooks for critical_stale transitions
 
 ## 1.5.0 — work-in-progress checkpoint
 

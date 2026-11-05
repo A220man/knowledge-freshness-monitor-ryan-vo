@@ -16,7 +16,8 @@ from backend.app.models.schemas import (
 from backend.app.services.graph_engine import (
     calculate_answer_impact,
     propagate_all_impacts,
-    extract_citation_graph_data
+    extract_citation_graph_data,
+    dispatch_webhook_notifications
 )
 from backend.app.services.llm_advisor import generate_advisory_report
 from backend.app.services.audit_service import log_action
@@ -87,13 +88,18 @@ def get_rag_answer(
 
 
 @router.post("/impact-analysis", response_model=ImpactAnalysisResponse)
-def trigger_impact_analysis(
+async def trigger_impact_analysis(
     session: UserSession = Depends(require_analyst),
     db: Session = Depends(get_db)
 ) -> ImpactAnalysisResponse:
     t0 = time.perf_counter()
     res = propagate_all_impacts(db)
     elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
+    
+    # Dispatch webhook notifications for critical_stale transitions
+    if res.get("webhook_notifications"):
+        await dispatch_webhook_notifications(res["webhook_notifications"])
+    
     return ImpactAnalysisResponse(
         analyzed_documents=res["analyzed_documents"],
         stale_or_expired_revisions=res["stale_or_expired_revisions"],
