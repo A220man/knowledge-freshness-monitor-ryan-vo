@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://llm.chris-vo.com/v1"
     LLM_API_KEY: str = ""
     LLM_REQUEST_TIMEOUT_SECONDS: int = 15
+    # Automated Impact Analysis Scheduler Settings
+    SCHEDULER_ENABLED: bool = True
+    SCHEDULER_INTERVAL_SECONDS: int = 300  # 5 minutes default
+
     # Webhook Notification Settings
     WEBHOOK_URL: str = ""
     WEBHOOK_SECRET: str = ""
