@@ -1,3 +1,5 @@
+import asyncio
+ 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -78,7 +80,18 @@ async def lifespan(app: FastAPI):
     settings.validate_production_guards()
     init_db()
     seed_demo_data()
-    yield
+    # Start the scheduler
+    from backend.app.services.scheduler_service import impact_scheduler
+    impact_scheduler.start()
+    try:
+        yield
+    finally:
+        impact_scheduler.stop()
+        if impact_scheduler._task is not None:
+            try:
+                await impact_scheduler._task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(
