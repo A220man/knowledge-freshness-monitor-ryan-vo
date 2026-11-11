@@ -86,7 +86,7 @@ def update_task_status(
     db: Session,
     task_id: str,
     new_status: str,
-    resolver_notes: str = "",
+    notes: str = "",
     user_id: str = ""
 ) -> RevalidationTask:
     task = db.query(RevalidationTask).filter(RevalidationTask.id == task_id).first()
@@ -98,7 +98,7 @@ def update_task_status(
         raise ValueError(f"Invalid status: {new_status}. Must be one of {valid_statuses}")
 
     task.status = new_status
-    task.resolver_notes = resolver_notes
+    task.notes = notes
     if new_status == "completed":
         task.completed_at = datetime.now(timezone.utc)
         # Reset answer freshness on completion
@@ -110,14 +110,13 @@ def update_task_status(
     db.commit()
     db.refresh(task)
     return task
-
-
 def _spreadsheet_cell(value):
     """Keep untrusted text literal in spreadsheet exports, without mutating storage."""
     if value is None:
         return ""
     text = str(value)
-    if text and text[0] in ("=", "+", "-", "@"):
+    text_stripped = text.lstrip()
+    if text_stripped and text_stripped[0] in ("=", "+", "-", "@"):
         return "'" + text
     return value
 
@@ -138,7 +137,7 @@ def export_tasks_csv(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["task_id", "answer_id", "query_text", "status", "priority_score", "priority_level", "reason", "scheduled_at", "completed_at", "resolver_notes"])
+    writer.writerow(["task_id", "answer_id", "query_text", "status", "priority_score", "priority_level", "reason", "scheduled_at", "completed_at", "notes", "resolved_by"])
 
     for task in tasks:
         # Get query_text from the associated answer
@@ -149,12 +148,13 @@ def export_tasks_csv(
             _spreadsheet_cell(task.answer_id),
             _spreadsheet_cell(query_text),
             _spreadsheet_cell(task.status),
-            _spreadsheet_cell(task.priority_score),
+            _spreadsheet_cell(f"{task.priority_score:.4f}"),
             _spreadsheet_cell(task.priority_level),
             _spreadsheet_cell(task.reason),
             _spreadsheet_cell(task.scheduled_at.isoformat() if task.scheduled_at else ""),
             _spreadsheet_cell(task.completed_at.isoformat() if task.completed_at else ""),
-            _spreadsheet_cell(task.resolver_notes),
+            _spreadsheet_cell(task.notes),
+            _spreadsheet_cell(task.resolved_by),
         ])
 
     return output.getvalue()

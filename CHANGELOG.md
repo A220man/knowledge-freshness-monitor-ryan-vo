@@ -1,8 +1,19 @@
 # Changelog
 
+## 1.9.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.8.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Fixed (this round)
+- RevalidationTask export safety: fixed `resolver_notes` vs `notes` field mismatch causing AttributeError in CSV export
+- `update_task_status` function now correctly uses `notes` parameter matching model field name
+- CSV export includes `resolved_by` field and properly neutralizes formulas with leading whitespace (space, tab, carriage return)
+- Priority score formatted to 4 decimal places in CSV export
+- All 56 backend tests and 5 frontend tests pass
 
 ## 1.7.0 — work-in-progress checkpoint
 
