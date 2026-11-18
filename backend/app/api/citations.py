@@ -1,5 +1,6 @@
 import hashlib
 import time
+import logging
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ from backend.app.services.llm_advisor import generate_advisory_report
 from backend.app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/citations", tags=["citations"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/answers", response_model=List[RagAnswerResponse])
