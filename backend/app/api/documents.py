@@ -17,7 +17,9 @@ from backend.app.services.document_service import (
 )
 from backend.app.services.graph_engine import dispatch_webhook_notifications
 from backend.app.services.audit_service import log_action
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
