@@ -170,3 +170,31 @@ async def test_notify_critical_stale_transition():
             assert call_args[0][1]["primary_citation_stale"] is True
     finally:
         settings.WEBHOOK_URL = original_url
+
+@pytest.mark.asyncio
+async def test_notify_critical_stale_transition_not_configured():
+    """notify_critical_stale_transition should return skipped when not configured."""
+    original_url = settings.WEBHOOK_URL
+    original_secret = settings.WEBHOOK_SECRET
+    try:
+        settings.WEBHOOK_URL = ""
+        settings.WEBHOOK_SECRET = ""
+
+        result = await notify_critical_stale_transition(
+            answer_id="ans_123",
+            query_text="Test query",
+            prior_status="fresh",
+            current_status="critical_stale",
+            impact_score=0.85,
+            stale_reasons=["Revision expired"],
+            primary_citation_stale=True,
+            affected_revisions=["rev_456"],
+        )
+
+        assert result["success"] is False
+        assert result["skipped"] is True
+        assert result["reason"] == "Webhook URL not configured"
+        assert result["attempts"] == 0
+    finally:
+        settings.WEBHOOK_URL = original_url
+        settings.WEBHOOK_SECRET = original_secret
