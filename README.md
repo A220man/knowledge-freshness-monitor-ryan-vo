@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.10.0`.
+Current version: `1.11.0`.
 
 Knowledge Freshness Monitor addresses the critical challenge of silent staleness in Retrieval-Augmented Generation (RAG) pipelines, where underlying source documents update, expire, or get superseded while cached answers continue citing obsolete context. The system implements a deterministic citation graph propagation engine combined with chunk-level lexical and semantic drift analysis to trace revision impacts across downstream query answers and schedule prioritized revalidation tasks. It is built for AI platform engineers, RAG operators, and enterprise knowledge managers requiring high assurance in generative knowledge retrieval.
 

@@ -193,6 +193,14 @@ async def notify_critical_stale_transition(
     """
     Notify webhook when an answer transitions to critical_stale status.
     """
+    if not webhook_service.is_configured():
+        return {
+            "success": False,
+            "skipped": True,
+            "reason": "Webhook URL not configured",
+            "attempts": 0
+        }
+
     data = {
         "answer_id": answer_id,
         "query_text": query_text,
