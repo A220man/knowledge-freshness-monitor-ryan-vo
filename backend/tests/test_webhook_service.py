@@ -172,6 +172,45 @@ async def test_notify_critical_stale_transition():
         settings.WEBHOOK_URL = original_url
 
 @pytest.mark.asyncio
+@pytest.mark.asyncio
+async def test_dispatch_http_error_triggers_retry():
+    """Dispatch should retry on HTTP error status with exponential backoff."""
+    service = WebhookService()
+    original_url = settings.WEBHOOK_URL
+    original_secret = settings.WEBHOOK_SECRET
+    original_max_retries = settings.WEBHOOK_MAX_RETRIES
+    original_base_delay = settings.WEBHOOK_RETRY_BASE_DELAY_SECONDS
+    settings.WEBHOOK_URL = "https://example.com/webhook"
+    settings.WEBHOOK_SECRET = "test-secret"
+    settings.WEBHOOK_MAX_RETRIES = 2
+    settings.WEBHOOK_RETRY_BASE_DELAY_SECONDS = 0  # No delay for test
+    try:
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            # Make first two attempts return 500, third return 200
+            mock_response_500 = MagicMock()
+            mock_response_500.status_code = 500
+            mock_response_500.text = "Internal Server Error"
+            mock_response_500.elapsed.total_seconds.return_value = 0.1
+
+            mock_response_200 = MagicMock()
+            mock_response_200.status_code = 200
+            mock_response_200.text = "OK"
+            mock_response_200.elapsed.total_seconds.return_value = 0.05
+
+            mock_post.side_effect = [mock_response_500, mock_response_500, mock_response_200]
+
+            result = await service.dispatch("test.event", {"key": "value"})
+
+            assert result["success"] is True
+            assert result["attempts"] == 3  # Initial + 2 retries
+            assert result["status_code"] == 200
+            # Third attempt succeeded
+            assert mock_post.call_count == 3
+    finally:
+        settings.WEBHOOK_URL = original_url
+        settings.WEBHOOK_SECRET = original_secret
+        settings.WEBHOOK_MAX_RETRIES = original_max_retries
+        settings.WEBHOOK_RETRY_BASE_DELAY_SECONDS = original_base_delay
 async def test_notify_critical_stale_transition_not_configured():
     """notify_critical_stale_transition should return skipped when not configured."""
     original_url = settings.WEBHOOK_URL
